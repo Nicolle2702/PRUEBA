@@ -6,7 +6,7 @@ app = Flask(__name__)
 DB_PATH = os.path.join(os.getcwd(), "database.db")
 
 def init_db():
-    con = sqlite3.connect(DB_PATH)
+   con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
     cur.execute("CREATE TABLE IF NOT EXISTS correos_autorizados(correo TEXT PRIMARY KEY)")
     cur.execute("""CREATE TABLE IF NOT EXISTS registros_qr(
@@ -15,6 +15,14 @@ def init_db():
         contenido_qr TEXT,
         fecha_hora TEXT
     )""")
+
+    # Inserta correos autorizados (agrega todos los que quieras)
+    correos = [
+        ("nicolle@email.com",),
+        ("ejemplo@dominio.com",)
+    ]
+    cur.executemany("INSERT OR IGNORE INTO correos_autorizados (correo) VALUES (?)", correos)
+
     con.commit()
     con.close()
 
