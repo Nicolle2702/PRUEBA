@@ -6,6 +6,7 @@ from io import BytesIO
 app = Flask(__name__)
 DB_PATH = os.path.join(os.getcwd(), "database.db")
 
+# Inicializar base de datos y agregar correo autorizado
 def init_db():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
@@ -16,17 +17,21 @@ def init_db():
         contenido_qr TEXT,
         fecha_hora TEXT
     )""")
-    cur.executemany("INSERT OR IGNORE INTO correos_autorizados (correo) VALUES (?)",
-                    [("nicolle@email.com",)])
+    # Agrega aquí tus correos autorizados
+    cur.executemany("INSERT OR IGNORE INTO correos_autorizados (correo) VALUES (?)", [
+        ("nicolle@email.com",)
+    ])
     con.commit()
     con.close()
 
 init_db()
 
+# Página principal
 @app.route("/")
 def index():
     return render_template("index.html")
 
+# Registrar un escaneo QR
 @app.route("/registrar_qr", methods=["POST"])
 def registrar():
     data = request.json
@@ -39,12 +44,14 @@ def registrar():
     cur.execute("SELECT 1 FROM correos_autorizados WHERE correo=?", (correo,))
     if not cur.fetchone():
         return jsonify(mensaje="Correo no autorizado"), 403
+
     cur.execute("INSERT INTO registros_qr (correo, contenido_qr, fecha_hora) VALUES (?, ?, ?)",
                 (correo, contenido_qr, fecha_hora))
     con.commit()
     con.close()
     return jsonify(mensaje=f"Registrado: {correo} → {contenido_qr} a las {fecha_hora}")
 
+# Descargar el archivo Excel con los registros
 @app.route("/descargar_excel")
 def descargar_excel():
     con = sqlite3.connect(DB_PATH)
@@ -53,12 +60,20 @@ def descargar_excel():
     registros = cur.fetchall()
     con.close()
 
+    # Crear archivo Excel
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Registros QR"
-    ws.append(["Correo", "Contenido del QR", "Fecha y hora"])
-    for row in registros:
-        ws.append(row)
+    ws.append(["Correo", "Texto extraído del QR", "Fecha y hora"])
+
+    for correo, contenido_qr, fecha in registros:
+        # Extraer texto después del signo "=" (si existe)
+        if "=" in contenido_qr:
+            extraido = contenido_qr.split("=")[-1]
+        else:
+            extraido = contenido_qr  # Usa todo el contenido si no hay "="
+
+        ws.append([correo, extraido, fecha])
 
     output = BytesIO()
     wb.save(output)
