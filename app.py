@@ -18,9 +18,8 @@ def init_db():
     con.commit()
     con.close()
 
-@app.before_first_request
-def startup():
-    init_db()
+# ✅ Ejecutar al iniciar el servidor (en vez de usar before_first_request)
+init_db()
 
 @app.route("/")
 def index():
@@ -41,3 +40,4 @@ def registrar():
     con.commit()
     con.close()
     return jsonify(mensaje=f"Registrado: {correo} → {contenido_qr} a las {fecha_hora}")
+
