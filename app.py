@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 app = Flask(__name__)
 DB_PATH = os.path.join(os.getcwd(), "database.db")
 
-# Inicializar la base de datos y correo autorizado
+# Inicializar base de datos y correo autorizado
 def init_db():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
@@ -51,7 +51,7 @@ def registrar():
     con.close()
     return jsonify(mensaje=f"Registrado: {correo} → {contenido_qr} a las {fecha_hora}")
 
-# Descargar Excel con texto real del QR
+# Descargar Excel con el texto visible del QR
 @app.route("/descargar_excel")
 def descargar_excel():
     con = sqlite3.connect(DB_PATH)
@@ -70,15 +70,19 @@ def descargar_excel():
             resp = requests.get(contenido_qr, timeout=5)
             soup = BeautifulSoup(resp.text, 'html.parser')
 
-            # Buscar el texto real del QR en la página
-            main_text = soup.find("div", class_="text-wrap")
-            if main_text:
-                extraido = main_text.get_text(strip=True)
-            else:
-                extraido = contenido_qr  # Si no se encuentra, se guarda el link original
+            # Buscar el primer <div> con contenido claro (sin menú, títulos, etc.)
+            divs = soup.find_all("div")
+            contenido_limpio = ""
+            for div in divs:
+                texto = div.get_text(strip=True)
+                if texto and "QR code" not in texto and "Make QR" not in texto:
+                    contenido_limpio = texto
+                    break
+
+            extraido = contenido_limpio if contenido_limpio else contenido_qr
 
         except Exception:
-            extraido = contenido_qr  # Si falla, se guarda el link como respaldo
+            extraido = contenido_qr
 
         ws.append([correo, extraido, fecha])
 
@@ -86,3 +90,4 @@ def descargar_excel():
     wb.save(output)
     output.seek(0)
     return send_file(output, download_name="registros_qr.xlsx", as_attachment=True)
+
