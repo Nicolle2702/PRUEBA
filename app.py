@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 app = Flask(__name__)
 DB_PATH = os.path.join(os.getcwd(), "database.db")
 
+# Inicializar la base de datos y correo autorizado
 def init_db():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
@@ -18,17 +19,20 @@ def init_db():
         contenido_qr TEXT,
         fecha_hora TEXT
     )""")
-    cur.executemany("INSERT OR IGNORE INTO correos_autorizados (correo) VALUES (?)",
-                    [("nicolle@email.com",)])
+    cur.executemany("INSERT OR IGNORE INTO correos_autorizados (correo) VALUES (?)", [
+        ("nicolle@email.com",)
+    ])
     con.commit()
     con.close()
 
 init_db()
 
+# Página principal
 @app.route("/")
 def index():
     return render_template("index.html")
 
+# Registro de escaneo QR
 @app.route("/registrar_qr", methods=["POST"])
 def registrar():
     data = request.json
@@ -47,6 +51,7 @@ def registrar():
     con.close()
     return jsonify(mensaje=f"Registrado: {correo} → {contenido_qr} a las {fecha_hora}")
 
+# Descargar Excel con texto real del QR
 @app.route("/descargar_excel")
 def descargar_excel():
     con = sqlite3.connect(DB_PATH)
@@ -64,9 +69,16 @@ def descargar_excel():
         try:
             resp = requests.get(contenido_qr, timeout=5)
             soup = BeautifulSoup(resp.text, 'html.parser')
-            extraido = soup.get_text(strip=True)
+
+            # Buscar el texto real del QR en la página
+            main_text = soup.find("div", class_="text-wrap")
+            if main_text:
+                extraido = main_text.get_text(strip=True)
+            else:
+                extraido = contenido_qr  # Si no se encuentra, se guarda el link original
+
         except Exception:
-            extraido = contenido_qr
+            extraido = contenido_qr  # Si falla, se guarda el link como respaldo
 
         ws.append([correo, extraido, fecha])
 
