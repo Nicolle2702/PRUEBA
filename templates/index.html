@@ -7,7 +7,10 @@
 </head>
 <body>
   <h2>Registro por QR</h2>
+
+  <label for="correo">Correo autorizado:</label><br>
   <input type="email" id="correo" placeholder="Ingresa tu correo autorizado" required>
+  
   <div id="qr-reader" style="width:300px; margin-top:10px;"></div>
   <button onclick="iniciarQR()">Escanear QR</button>
 
@@ -20,11 +23,13 @@
       }
 
       const qr = new Html5Qrcode("qr-reader");
+
       qr.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
         qrCodeMessage => {
-          const fechaHora = new Date().toISOString();
+          const fechaHora = new Date().toLocaleString(); // ← Usa la hora local
+
           fetch('/registrar_qr', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -35,11 +40,19 @@
             })
           })
           .then(res => res.json())
-          .then(data => alert(data.mensaje))
-          .catch(err => console.error(err));
+          .then(data => {
+            alert(data.mensaje);
+          })
+          .catch(err => {
+            console.error(err);
+            alert("Error al registrar el QR");
+          });
+
           qr.stop();
         },
-        error => {}
+        error => {
+          // Silencia errores de escaneo (por ejemplo, cuando no detecta nada)
+        }
       );
     }
   </script>
