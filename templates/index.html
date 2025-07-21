@@ -42,8 +42,13 @@
     function iniciarCamara() {
       Html5Qrcode.getCameras().then(cameras => {
         if (cameras && cameras.length) {
+          // Buscar cámara trasera si está disponible
+          const backCamera = cameras.find(cam =>
+            cam.label.toLowerCase().includes("back") || cam.label.toLowerCase().includes("trasera")
+          ) || cameras[0];
+
           qrScanner.start(
-            cameras[0].id,
+            backCamera.id,
             { fps: 10, qrbox: 250 },
             qrMessage => {
               zonaDetectada = qrMessage;
