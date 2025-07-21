@@ -1,0 +1,68 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro QR</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        input, select, button {
+            width: 100%;
+            padding: 0.8rem;
+            margin: 0.5rem 0 1rem 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem;
+            }
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Registro QR</h2>
+        <form action="/registrar" method="POST">
+            <label for="correo">Correo:</label>
+            <input type="email" name="correo" required>
+
+            <label for="accion">Acción:</label>
+            <select name="accion" required>
+                <option value="inicio">Inicio</option>
+                <option value="final">Final</option>
+            </select>
+
+            <label for="contenido_qr">Contenido QR:</label>
+            <input type="text" name="contenido_qr" required>
+
+            <button type="submit">Registrar</button>
+        </form>
+    </div>
+</body>
+</html>
