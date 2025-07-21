@@ -6,7 +6,6 @@ from io import BytesIO
 app = Flask(__name__)
 DB_PATH = os.path.join(os.getcwd(), "database.db")
 
-# Inicializar base de datos
 def init_db():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
@@ -15,8 +14,8 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         correo TEXT,
         zona TEXT,
-        tipo TEXT,
-        hora TEXT
+        entrada TEXT,
+        salida TEXT
     )""")
     cur.executemany("INSERT OR IGNORE INTO correos_autorizados (correo) VALUES (?)", [
         ("nicolle@email.com",)
@@ -36,7 +35,7 @@ def registrar():
     correo = data.get("correo")
     tipo = data.get("tipo")
     zona = data.get("zona")
-    hora = data.get("hora")
+    hora = data.get("hora")  # viene del frontend en formato legible
 
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
@@ -44,27 +43,41 @@ def registrar():
     if not cur.fetchone():
         return jsonify(mensaje="Correo no autorizado"), 403
 
-    cur.execute("""
-        INSERT INTO registros_qr (correo, zona, tipo, hora)
-        VALUES (?, ?, ?, ?)
-    """, (correo, zona, tipo, hora))
+    if tipo == "inicio":
+        cur.execute("""
+            INSERT INTO registros_qr (correo, zona, entrada)
+            VALUES (?, ?, ?)
+        """, (correo, zona, hora))
+        mensaje = f"{correo} registrado como INICIO en {zona} a las {hora}"
+    else:
+        cur.execute("""
+            SELECT id FROM registros_qr
+            WHERE correo=? AND salida IS NULL
+            ORDER BY id DESC LIMIT 1
+        """, (correo,))
+        fila = cur.fetchone()
+        if fila:
+            cur.execute("UPDATE registros_qr SET salida=? WHERE id=?", (hora, fila[0]))
+            mensaje = f"{correo} registrado como FINAL en {zona} a las {hora}"
+        else:
+            mensaje = "No se encontró un registro previo de INICIO sin FINAL."
 
     con.commit()
     con.close()
-    return jsonify(mensaje=f"{correo} registrado como {tipo.upper()} en {zona} a las {hora}")
+    return jsonify(mensaje=mensaje)
 
 @app.route("/descargar_excel")
 def descargar_excel():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
-    cur.execute("SELECT correo, zona, tipo, hora FROM registros_qr ORDER BY id DESC")
+    cur.execute("SELECT correo, zona, entrada, salida FROM registros_qr ORDER BY id DESC")
     registros = cur.fetchall()
     con.close()
 
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Registros QR"
-    ws.append(["Correo", "Zona", "Tipo", "Hora"])
+    ws.append(["Correo", "Zona", "Hora de Entrada", "Hora de Salida"])
     for fila in registros:
         ws.append(fila)
 
