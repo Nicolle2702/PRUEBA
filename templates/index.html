@@ -10,8 +10,8 @@
   <div class="container">
     <h1>Registro de Servicio</h1>
 
-    <!-- Vista previa del escáner -->
-    <div id="qrVideo" style="width: 100%; height: auto; border-radius: 10px;"></div>
+    <!-- Vista previa del escáner con tamaño visible -->
+    <div id="qrVideo" style="width: 100%; max-width: 320px; height: 240px; margin: auto; border: 2px solid #ccc; border-radius: 12px;"></div>
     <p><strong>Zona detectada:</strong> <span id="zona">Ninguna</span></p>
 
     <!-- Formulario -->
@@ -32,9 +32,7 @@
     <a class="descarga" href="/descargar_excel">Descargar Excel</a>
   </div>
 
-  <!-- Librería de escáner QR -->
   <script src="https://unpkg.com/html5-qrcode"></script>
-
   <script>
     const zonaSpan = document.getElementById("zona");
     let zonaDetectada = "";
@@ -68,7 +66,6 @@
 
     iniciarCamara();
 
-    // Registrar formulario
     document.getElementById("qrForm").addEventListener("submit", async function(e) {
       e.preventDefault();
       const correo = document.getElementById("correo").value;
@@ -79,7 +76,6 @@
         return;
       }
 
-      // Hora local ajustada a Colombia (UTC-5)
       const now = new Date();
       const colombiaOffset = -5 * 60;
       const utc = now.getTime() + now.getTimezoneOffset() * 60000;
@@ -98,4 +94,5 @@
   </script>
 </body>
 </html>
+
 
