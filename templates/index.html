@@ -10,9 +10,11 @@
   <div class="container">
     <h1>Registro de Servicio</h1>
 
-    <video id="qrVideo" width="100%" style="border-radius:10px;"></video>
+    <!-- Vista previa del escáner -->
+    <div id="qrVideo" style="width: 100%; height: auto; border-radius: 10px;"></div>
     <p><strong>Zona detectada:</strong> <span id="zona">Ninguna</span></p>
 
+    <!-- Formulario -->
     <form id="qrForm">
       <label for="correo">Correo:</label>
       <input type="email" id="correo" name="correo" required>
@@ -30,36 +32,54 @@
     <a class="descarga" href="/descargar_excel">Descargar Excel</a>
   </div>
 
+  <!-- Librería de escáner QR -->
   <script src="https://unpkg.com/html5-qrcode"></script>
+
   <script>
     const zonaSpan = document.getElementById("zona");
     let zonaDetectada = "";
 
     const qrScanner = new Html5Qrcode("qrVideo");
-    Html5Qrcode.getCameras().then(cameras => {
-      if (cameras && cameras.length) {
-        qrScanner.start(
-          cameras[0].id,
-          { fps: 10, qrbox: 250 },
-          qrMessage => {
-            zonaDetectada = qrMessage;
-            zonaSpan.textContent = qrMessage;
-            qrScanner.stop();
-          }
-        );
-      }
-    });
 
+    function iniciarCamara() {
+      Html5Qrcode.getCameras().then(cameras => {
+        if (cameras && cameras.length) {
+          qrScanner.start(
+            cameras[0].id,
+            { fps: 10, qrbox: 250 },
+            qrMessage => {
+              zonaDetectada = qrMessage;
+              zonaSpan.textContent = qrMessage;
+              qrScanner.stop();
+            },
+            errorMessage => {
+              console.warn("Intento fallido de lectura:", errorMessage);
+            }
+          ).catch(err => {
+            alert("❌ No se pudo iniciar el escáner: " + err);
+          });
+        } else {
+          alert("⚠️ No se encontró ninguna cámara disponible.");
+        }
+      }).catch(err => {
+        alert("🚫 Error al acceder a la cámara: " + err);
+      });
+    }
+
+    iniciarCamara();
+
+    // Registrar formulario
     document.getElementById("qrForm").addEventListener("submit", async function(e) {
       e.preventDefault();
       const correo = document.getElementById("correo").value;
       const tipo = document.getElementById("tipo").value;
 
       if (!zonaDetectada) {
-        alert("Primero escanea un código QR para identificar la zona.");
+        alert("⚠️ Primero debes escanear un código QR para identificar la zona.");
         return;
       }
 
+      // Hora local ajustada a Colombia (UTC-5)
       const now = new Date();
       const colombiaOffset = -5 * 60;
       const utc = now.getTime() + now.getTimezoneOffset() * 60000;
@@ -78,3 +98,4 @@
   </script>
 </body>
 </html>
+
