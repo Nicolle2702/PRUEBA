@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: qr-registro
+    env: python
+    buildCommand: ""
+    startCommand: "gunicorn app:app"

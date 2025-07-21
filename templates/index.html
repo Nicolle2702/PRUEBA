@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registro QR</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>Registro de Servicio</h1>
+
+    <video id="qrVideo" width="100%" style="border-radius:10px;"></video>
+    <p><strong>Zona detectada:</strong> <span id="zona">Ninguna</span></p>
+
+    <form id="qrForm">
+      <label for="correo">Correo:</label>
+      <input type="email" id="correo" name="correo" required>
+
+      <label for="tipo">Tipo de registro:</label>
+      <select id="tipo" name="tipo">
+        <option value="inicio">Inicio</option>
+        <option value="final">Final</option>
+      </select>
+
+      <button type="submit">Registrar</button>
+    </form>
+
+    <p id="mensaje"></p>
+    <a class="descarga" href="/descargar_excel">Descargar Excel</a>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script>
+    const zonaSpan = document.getElementById("zona");
+    let zonaDetectada = "";
+
+    const qrScanner = new Html5Qrcode("qrVideo");
+    Html5Qrcode.getCameras().then(cameras => {
+      if (cameras && cameras.length) {
+        qrScanner.start(
+          cameras[0].id,
+          { fps: 10, qrbox: 250 },
+          qrMessage => {
+            zonaDetectada = qrMessage;
+            zonaSpan.textContent = qrMessage;
+            qrScanner.stop();
+          }
+        );
+      }
+    });
+
+    document.getElementById("qrForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const correo = document.getElementById("correo").value;
+      const tipo = document.getElementById("tipo").value;
+
+      if (!zonaDetectada) {
+        alert("Primero escanea un código QR para identificar la zona.");
+        return;
+      }
+
+      const now = new Date();
+      const colombiaOffset = -5 * 60;
+      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+      const colombiaTime = new Date(utc + colombiaOffset * 60000);
+      const hora = colombiaTime.toISOString();
+
+      const res = await fetch("/registrar_qr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ correo, tipo, zona: zonaDetectada, hora })
+      });
+
+      const data = await res.json();
+      document.getElementById("mensaje").textContent = data.mensaje;
+    });
+  </script>
+</body>
+</html>
