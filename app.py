@@ -70,8 +70,18 @@ def registrar():
     con.close()
     return jsonify(mensaje=mensaje)
 
-@app.route("/descargar_excel")
+@app.route("/descargar_excel", methods=["POST"])
 def descargar_excel():
+    data = request.json
+    clave = data.get("clave")
+
+    # Claves de acceso
+    CLAVE_MODIFICABLE = "clave123"
+    CLAVE_SOLO_LECTURA = "sololectura456"
+
+    if clave not in [CLAVE_MODIFICABLE, CLAVE_SOLO_LECTURA]:
+        return jsonify({"error": "Clave incorrecta"}), 403
+
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
     cur.execute("SELECT correo, zona, entrada, salida, problema FROM registros_qr ORDER BY id DESC")
@@ -85,7 +95,14 @@ def descargar_excel():
     for fila in registros:
         ws.append(fila)
 
+    if clave == CLAVE_SOLO_LECTURA:
+        from openpyxl.worksheet.protection import SheetProtection
+        ws.protection.sheet = True
+        ws.protection.enable()
+
     output = BytesIO()
     wb.save(output)
     output.seek(0)
-    return send_file(output, download_name="registros_qr.xlsx", as_attachment=True)
+
+    nombre = "registros_qr.xlsx" if clave == CLAVE_MODIFICABLE else "registros_qr_protegido.xlsx"
+    return send_file(output, download_name=nombre, as_attachment=True)
