@@ -15,7 +15,8 @@ def init_db():
         correo TEXT,
         zona TEXT,
         entrada TEXT,
-        salida TEXT
+        salida TEXT,
+        problema TEXT
     )""")
     cur.executemany("INSERT OR IGNORE INTO correos_autorizados (correo) VALUES (?)", [
         ("nicolle@email.com",)
@@ -35,7 +36,8 @@ def registrar():
     correo = data.get("correo")
     tipo = data.get("tipo")
     zona = data.get("zona")
-    hora = data.get("hora")  # viene del frontend en formato legible
+    hora = data.get("hora")
+    problema = data.get("problema", "")
 
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
@@ -45,9 +47,9 @@ def registrar():
 
     if tipo == "inicio":
         cur.execute("""
-            INSERT INTO registros_qr (correo, zona, entrada)
-            VALUES (?, ?, ?)
-        """, (correo, zona, hora))
+            INSERT INTO registros_qr (correo, zona, entrada, problema)
+            VALUES (?, ?, ?, ?)
+        """, (correo, zona, hora, problema))
         mensaje = f"{correo} registrado como INICIO en {zona} a las {hora}"
     else:
         cur.execute("""
@@ -57,7 +59,9 @@ def registrar():
         """, (correo,))
         fila = cur.fetchone()
         if fila:
-            cur.execute("UPDATE registros_qr SET salida=? WHERE id=?", (hora, fila[0]))
+            cur.execute("""
+                UPDATE registros_qr SET salida=?, problema=? WHERE id=?
+            """, (hora, problema, fila[0]))
             mensaje = f"{correo} registrado como FINAL en {zona} a las {hora}"
         else:
             mensaje = "No se encontró un registro previo de INICIO sin FINAL."
@@ -70,14 +74,14 @@ def registrar():
 def descargar_excel():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
-    cur.execute("SELECT correo, zona, entrada, salida FROM registros_qr ORDER BY id DESC")
+    cur.execute("SELECT correo, zona, entrada, salida, problema FROM registros_qr ORDER BY id DESC")
     registros = cur.fetchall()
     con.close()
 
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Registros QR"
-    ws.append(["Correo", "Zona", "Hora de Entrada", "Hora de Salida"])
+    ws.append(["Correo", "Zona", "Hora de Entrada", "Hora de Salida", "Problema presentado"])
     for fila in registros:
         ws.append(fila)
 
