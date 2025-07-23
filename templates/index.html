@@ -1,29 +1,30 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Registro QR</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
   <div class="container">
     <h1>Registro de Servicio</h1>
 
-    <!-- Vista previa del escáner con tamaño visible -->
     <div id="qrVideo" style="width: 100%; max-width: 320px; height: 240px; margin: auto; border: 2px solid #ccc; border-radius: 12px;"></div>
     <p><strong>Zona detectada:</strong> <span id="zona">Ninguna</span></p>
 
-    <!-- Formulario -->
     <form id="qrForm">
       <label for="correo">Correo:</label>
-      <input type="email" id="correo" name="correo" required>
+      <input type="email" id="correo" name="correo" required />
 
       <label for="tipo">Tipo de registro:</label>
       <select id="tipo" name="tipo">
         <option value="inicio">Inicio</option>
         <option value="final">Final</option>
       </select>
+
+      <label for="problema">Problema presentado (opcional):</label>
+      <textarea id="problema" name="problema" rows="3" placeholder="Describe el problema..."></textarea>
 
       <button type="submit">Registrar</button>
     </form>
@@ -75,6 +76,7 @@
       e.preventDefault();
       const correo = document.getElementById("correo").value;
       const tipo = document.getElementById("tipo").value;
+      const problema = document.getElementById("problema").value;
 
       if (!zonaDetectada) {
         alert("⚠️ Primero debes escanear un código QR para identificar la zona.");
@@ -98,7 +100,7 @@
       const res = await fetch("/registrar_qr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ correo, tipo, zona: zonaDetectada, hora })
+        body: JSON.stringify({ correo, tipo, zona: zonaDetectada, hora, problema })
       });
 
       const data = await res.json();
@@ -107,3 +109,4 @@
   </script>
 </body>
 </html>
+
